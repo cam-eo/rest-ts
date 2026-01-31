@@ -1,16 +1,33 @@
-import { serve } from '@hono/node-server';
-import { app } from './app.js';
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import { swaggerPlugin } from "./plugins/swagger.js";
+import { healthRoutes } from "./routes/health.js";
+import { usersRoutes } from "./routes/users.js";
 
-const port = parseInt(process.env.PORT || '3000');
+const port = parseInt(process.env.PORT ?? "3000", 10);
 
-const server = serve({
-  fetch: app.fetch,
-  port
-});
+async function main(): Promise<void> {
+  const fastify = Fastify({ logger: true });
 
-server.on('error', (error: Error) => {
-  console.error('Server error:', error);
-  process.exit(1);
-});
+  await fastify.register(cors, { origin: true });
 
-console.log(`:check: Server is running on port ${port}`); 
+  await fastify.register(swaggerPlugin);
+
+  await fastify.register(healthRoutes);
+  await fastify.register(usersRoutes, { prefix: "/users" });
+
+  fastify.setErrorHandler((err, _request, reply) => {
+    fastify.log.error(err);
+    void reply.status(500).send({ error: "Something went wrong!" });
+  });
+
+  try {
+    await fastify.listen({ port, host: "0.0.0.0" });
+    fastify.log.info(`Server is running on port ${port}`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+}
+
+void main();
