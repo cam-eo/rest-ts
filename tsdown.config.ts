@@ -1,9 +1,9 @@
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: ['src/server.ts'],
   format: ['esm'],
   dts: true,
   clean: true,
-  target: "node22"
-}); 
+  target: 'node22',
+});
